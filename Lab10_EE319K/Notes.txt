@@ -1,0 +1,13 @@
+struct power{
+	int16_t x; 
+	int16_t y;
+	int8_t w, h; 
+	int8_t yvel; 
+	uint8_t active; 
+	const uint16_t *image; 
+};
+typedef struct power power_t; 
+
+power_t WidenP = {0, 0, 20, 20, 1, 0, PlusLen};
+power_t ExtraLiveP = {0, 0, 20, 20, 1, 0, ExtraLife}; 
+power_t NoBoundP = {0, 0, 20, 20, 1, 0, NoBound}; 

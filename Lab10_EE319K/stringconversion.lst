@@ -1,0 +1,545 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; StringConversion.s
+    2 00000000         ; Student names: change this to your names or look very 
+                       silly
+    3 00000000         ; Last modification date: change this to the last modifi
+                       cation date or look very silly
+    4 00000000         ; Runs on TM4C123
+    5 00000000         ; ECE319K lab 7 number to string conversions
+    6 00000000         ;
+    7 00000000         ; Used in ECE319K Labs 7,8,9,10. You write these two fun
+                       ctions
+    8 00000000         
+    9 00000000         
+   10 00000000                 EXPORT           Dec2String
+   11 00000000                 EXPORT           Fix2String
+   12 00000000                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+   13 00000000                 THUMB
+   14 00000000                 PRESERVE8
+   15 00000000         
+   16 00000000         
+   17 00000000         ;-----------------------Dec2String----------------------
+                       -
+   18 00000000         ; Convert a 32-bit number into unsigned decimal format
+   19 00000000         ; String the string into the empty array add null-termin
+                       ation
+   20 00000000         ; Input: R0 (call by value) 32-bit unsigned number
+   21 00000000         ;        R1 pointer to empty array
+   22 00000000         ; Output: none
+   23 00000000         ; Invariables: This function must not permanently modify
+                        registers R4 to R11
+   24 00000000         Dec2String
+   25 00000000 00000000 
+                       n       EQU              0
+   26 00000000 00000004 
+                       GPd2s   EQU              4
+   27 00000000 00000008 
+                       digitCount
+                               EQU              8
+   28 00000000 0000000C 
+                       chard2s EQU              12
+   29 00000000 F04F 020A       MOV              R2, #10     ; R2 serves as a co
+                                                            stant because UDIV 
+                                                            and MUL don't take 
+                                                            constants
+   30 00000004 B430            PUSH             {R4, R5}
+   31 00000006 B084            SUB              SP, #16
+   32 00000008 466C            MOV              R4, SP      ; R4 is the FP 
+   33 0000000A 6020            STR              R0, [R4, #n]
+   34 0000000C 6061            STR              R1, [R4, #GPd2s]
+   35 0000000E F04F 0000       MOV              R0, #0
+   36 00000012 60A0            STR              R0, [R4, #digitCount]
+   37 00000014         
+   38 00000014 6820            LDR              R0, [R4, #n]
+   39 00000016 2800            CMP              R0, #0
+   40 00000018 D021            BEQ              zerod2s
+   41 0000001A         
+   42 0000001A         loopd2s
+   43 0000001A 6820            LDR              R0, [R4, #n]
+   44 0000001C 2800            CMP              R0, #0
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   45 0000001E D00F            BEQ              makeArray
+   46 00000020         
+   47 00000020 FBB0 F1F2       UDIV             R1, R0, R2  ; Contains n/10 
+   48 00000024 FB01 F502       MUL              R5, R1, R2  ;
+   49 00000028 EBA0 0005       SUB              R0, R5      ; R0 contains n % 1
+                                                            0 || the digit to p
+                                                            ush on stack
+   50 0000002C 6021            STR              R1, [R4, #n]
+   51 0000002E F100 0030       ADD              R0, #0x30
+   52 00000032 60E0            STR              R0, [R4, #chard2s]
+   53 00000034 B501            PUSH{R0,         LR}
+   54 00000036 68A0            LDR              R0, [R4, #digitCount]
+   55 00000038 F100 0001       ADD              R0, #1
+   56 0000003C 60A0            STR              R0, [R4, #digitCount]
+   57 0000003E E7EC            B                loopd2s
+   58 00000040         makeArray
+   59 00000040 68A0            LDR              R0, [R4, #digitCount]
+   60 00000042 2800            CMP              R0, #0
+   61 00000044 D013            BEQ              nullTerminate
+   62 00000046 E8BD 4001       POP{R0,          LR}
+   63 0000004A 6861            LDR              R1, [R4, #GPd2s]
+   64 0000004C 7008            STRB             R0, [R1]
+   65 0000004E F101 0101       ADD              R1, #1
+   66 00000052 6061            STR              R1, [R4, #GPd2s]
+   67 00000054 68A0            LDR              R0, [R4, #digitCount]
+   68 00000056 F1A0 0001       SUB              R0, #1
+   69 0000005A 60A0            STR              R0, [R4, #digitCount]
+   70 0000005C E7F0            B                makeArray
+   71 0000005E         zerod2s
+   72 0000005E F100 0030       ADD              R0, #0x30
+   73 00000062 60E0            STR              R0, [R4, #chard2s]
+   74 00000064 6861            LDR              R1, [R4, #GPd2s]
+   75 00000066 7008            STRB             R0, [R1]
+   76 00000068 F101 0101       ADD              R1, #1
+   77 0000006C 6061            STR              R1, [R4, #GPd2s]
+   78 0000006E         nullTerminate
+   79 0000006E F04F 0000       MOV              R0, #0
+   80 00000072 60E0            STR              R0, [R4, #chard2s]
+   81 00000074 6861            LDR              R1, [R4, #GPd2s]
+   82 00000076 7008            STRB             R0, [R1]
+   83 00000078 B004            ADD              SP, #16
+   84 0000007A BC30            POP              {R4, R5}
+   85 0000007C 4770            BX               LR
+   86 0000007E         ;* * * * * * * * End of Dec2String * * * * * * * *
+   87 0000007E         
+   88 0000007E         
+   89 0000007E         ; -----------------------Fix2String---------------------
+                       -
+   90 0000007E         ; Create characters for LCD display in fixed-point forma
+                       t
+   91 0000007E         ; unsigned decimal, resolution 0.001, range 0.000 to 9.9
+                       99
+   92 0000007E         ; Inputs:  R0 is an unsigned 32-bit number
+   93 0000007E         ;          R1 pointer to empty array
+   94 0000007E         ; Outputs: none
+   95 0000007E         ; E.g., R0=0,    then create "0.000 "
+   96 0000007E         ;       R0=3,    then create "0.003"
+   97 0000007E         ;       R0=89,   then create "0.089"
+   98 0000007E         ;       R0=123,  then create "0.123"
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   99 0000007E         ;       R0=9999, then create "9.999"
+  100 0000007E         ;       R0>9999, then create "*.***"
+  101 0000007E         ; Invariables: This function must not permanently modify
+                        registers R4 to R11
+  102 0000007E         Fix2String
+  103 0000007E 00000000 
+                       GIf2s   EQU              0
+  104 0000007E 00000004 
+                       GPf2s   EQU              4
+  105 0000007E 00000008 
+                       ten     EQU              8
+  106 0000007E 0000000C 
+                       hundred EQU              12
+  107 0000007E 00000010 
+                       thousand
+                               EQU              16
+  108 0000007E 00000014 
+                       char    EQU              20
+  109 0000007E         
+  110 0000007E B086            SUB              SP, #24     ; Allocation
+  111 00000080 F04F 020A       MOV              R2, #10
+  112 00000084 F04F 0364       MOV              R3, #100
+  113 00000088 4684            MOV              R12, R0
+  114 0000008A 9000            STR              R0, [SP, #GIf2s]
+  115 0000008C 9101            STR              R1, [SP, #GPf2s]
+  116 0000008E 9202            STR              R2, [SP, #ten]
+  117 00000090 9303            STR              R3, [SP, #hundred]
+  118 00000092 F44F 717A       MOV              R1, #1000
+  119 00000096 9104            STR              R1, [SP, #thousand]
+  120 00000098         
+  121 00000098 FBBC FCF1       UDIV             R12, R1     ; store 1000s digit
+                                                             into array
+  122 0000009C F1BC 0F09       CMP              R12, #9
+  123 000000A0 DC5E            BGT              invalid
+  124 000000A2         
+  125 000000A2 F10C 0C30       ADD              R12, #0x30
+  126 000000A6 F8CD C014       STR              R12, [SP, #char]
+  127 000000AA 9901            LDR              R1, [SP, #GPf2s]
+  128 000000AC F881 C000       STRB             R12, [R1]
+  129 000000B0 F101 0101       ADD              R1, #1
+  130 000000B4 9101            STR              R1, [SP, #GPf2s]
+  131 000000B6         
+  132 000000B6 F04F 0C2E       MOV              R12, #0x2E  ; Stores decimal in
+                                                            to array
+  133 000000BA F8CD C014       STR              R12, [SP, #char]
+  134 000000BE F881 C000       STRB             R12, [R1]
+  135 000000C2 F101 0101       ADD              R1, #1
+  136 000000C6 9101            STR              R1, [SP, #GPf2s]
+  137 000000C8         
+  138 000000C8 9904            LDR              R1, [SP, #thousand]
+  139 000000CA FBB0 F0F1       UDIV             R0, R1      ; number % 1000
+  140 000000CE FB00 F001       MUL              R0, R1
+  141 000000D2 9900            LDR              R1, [SP, #GIf2s]
+  142 000000D4 EBA1 0C00       SUB              R12, R1, R0
+  143 000000D8 F8CD C000       STR              R12, [SP, #GIf2s]
+  144 000000DC         
+  145 000000DC FBBC FCF3       UDIV             R12, R3     ; Store 100s digit 
+                                                            into array
+  146 000000E0 F8CD C014       STR              R12, [SP, #char]
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+  147 000000E4 F10C 0C30       ADD              R12, #0x30
+  148 000000E8 F8CD C014       STR              R12, [SP, #char]
+  149 000000EC 9901            LDR              R1, [SP, #GPf2s]
+  150 000000EE F881 C000       STRB             R12, [R1]
+  151 000000F2 F101 0101       ADD              R1, #1
+  152 000000F6 9101            STR              R1, [SP, #GPf2s]
+  153 000000F8         
+  154 000000F8 9800            LDR              R0, [SP, #GIf2s]
+  155 000000FA FBB0 F0F3       UDIV             R0, R3      ; number % 100
+  156 000000FE FB00 F003       MUL              R0, R3
+  157 00000102 9900            LDR              R1, [SP, #GIf2s]
+  158 00000104 EBA1 0C00       SUB              R12, R1, R0
+  159 00000108 F8CD C000       STR              R12, [SP, #GIf2s]
+  160 0000010C         
+  161 0000010C FBBC FCF2       UDIV             R12, R2     ; Store 10s digit i
+                                                            nto array
+  162 00000110 F8CD C014       STR              R12, [SP, #char]
+  163 00000114 F10C 0C30       ADD              R12, #0x30
+  164 00000118 F8CD C014       STR              R12, [SP, #char]
+  165 0000011C 9901            LDR              R1, [SP, #GPf2s]
+  166 0000011E F881 C000       STRB             R12, [R1]
+  167 00000122 F101 0101       ADD              R1, #1
+  168 00000126 9101            STR              R1, [SP, #GPf2s]
+  169 00000128         
+  170 00000128 F8DD C000       LDR              R12, [SP, #GIf2s] ; number % 10
+                                                            
+  171 0000012C FBBC FCF2       UDIV             R12, R2
+  172 00000130 FB0C FC02       MUL              R12, R2
+  173 00000134 9800            LDR              R0, [SP, #GIf2s]
+  174 00000136 EBA0 000C       SUB              R0, R0, R12
+  175 0000013A 9000            STR              R0, [SP, #GIf2s]
+  176 0000013C         
+  177 0000013C F100 0030       ADD              R0, #0x30
+  178 00000140 9901            LDR              R1, [SP, #GPf2s]
+  179 00000142 7008            STRB             R0, [R1]
+  180 00000144 F101 0101       ADD              R1, #1
+  181 00000148 9101            STR              R1, [SP, #GPf2s]
+  182 0000014A         
+  183 0000014A F04F 0020       MOV              R0, #0x20
+  184 0000014E 7008            STRB             R0, [R1]
+  185 00000150 F101 0101       ADD              R1, #1
+  186 00000154 9101            STR              R1, [SP, #GPf2s]
+  187 00000156         
+  188 00000156 F04F 0000       MOV              R0, #0
+  189 0000015A 7008            STRB             R0, [R1]
+  190 0000015C B006            ADD              SP, #24
+  191 0000015E 4770            BX               LR
+  192 00000160         
+  193 00000160         invalid
+  194 00000160 F04F 002A       MOV              R0, #0x2A
+  195 00000164 9005            STR              R0, [SP, #char]
+  196 00000166 9901            LDR              R1, [SP, #GPf2s]
+  197 00000168 7008            STRB             R0, [R1]
+  198 0000016A F101 0101       ADD              R1, #1
+  199 0000016E 9101            STR              R1, [SP, #GPf2s]
+  200 00000170         
+  201 00000170 F04F 002E       MOV              R0, #0x2E
+  202 00000174 9005            STR              R0, [SP, #char]
+  203 00000176 9901            LDR              R1, [SP, #GPf2s]
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  204 00000178 7008            STRB             R0, [R1]
+  205 0000017A F101 0101       ADD              R1, #1
+  206 0000017E 9101            STR              R1, [SP, #GPf2s]
+  207 00000180         
+  208 00000180 F04F 002A       MOV              R0, #0x2A
+  209 00000184 9005            STR              R0, [SP, #char]
+  210 00000186 9901            LDR              R1, [SP, #GPf2s]
+  211 00000188 7008            STRB             R0, [R1]
+  212 0000018A F101 0101       ADD              R1, #1
+  213 0000018E 9101            STR              R1, [SP, #GPf2s]
+  214 00000190         
+  215 00000190 F04F 002A       MOV              R0, #0x2A
+  216 00000194 9005            STR              R0, [SP, #char]
+  217 00000196 9901            LDR              R1, [SP, #GPf2s]
+  218 00000198 7008            STRB             R0, [R1]
+  219 0000019A F101 0101       ADD              R1, #1
+  220 0000019E 9101            STR              R1, [SP, #GPf2s]
+  221 000001A0         
+  222 000001A0 F04F 002A       MOV              R0, #0x2A
+  223 000001A4 9005            STR              R0, [SP, #char]
+  224 000001A6 9901            LDR              R1, [SP, #GPf2s]
+  225 000001A8 7008            STRB             R0, [R1]
+  226 000001AA F101 0101       ADD              R1, #1
+  227 000001AE 9101            STR              R1, [SP, #GPf2s]
+  228 000001B0         
+  229 000001B0 F04F 0000       MOV              R0, #0
+  230 000001B4 9005            STR              R0, [SP, #char]
+  231 000001B6 7008            STRB             R0, [R1]
+  232 000001B8         
+  233 000001B8 B006            ADD              SP, #24
+  234 000001BA 4770            BX               LR
+  235 000001BC         
+  236 000001BC         
+  237 000001BC         
+  238 000001BC         
+  239 000001BC                 ALIGN                        ; make sure the end
+                                                             of this section is
+                                                             aligned
+  240 000001BC                 END                          ; end of file
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M4 --fpu=
+SoftVFP --depend=.\stringconversion.d -o.\stringconversion.o -I.\RTE\_BrickBrea
+ker -IC:\Users\aj200\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include
+ -IC:\Users\aj200\AppData\Local\Arm\Packs\Keil\TM4C_DFP\1.1.0\Device\Include\TM
+4C123 --predefine="__UVISION_VERSION SETA 538" --predefine="_RTE_ SETA 1" --pre
+define="TM4C123GH6PM SETA 1" --predefine="_RTE_ SETA 1" --list=.\stringconversi
+on.lst ..\inc\StringConversion.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 12 in file ..\inc\StringConversion.s
+   Uses
+      None
+Comment: .text unused
+Dec2String 00000000
+
+Symbol: Dec2String
+   Definitions
+      At line 24 in file ..\inc\StringConversion.s
+   Uses
+      At line 10 in file ..\inc\StringConversion.s
+Comment: Dec2String used once
+Fix2String 0000007E
+
+Symbol: Fix2String
+   Definitions
+      At line 102 in file ..\inc\StringConversion.s
+   Uses
+      At line 11 in file ..\inc\StringConversion.s
+Comment: Fix2String used once
+invalid 00000160
+
+Symbol: invalid
+   Definitions
+      At line 193 in file ..\inc\StringConversion.s
+   Uses
+      At line 123 in file ..\inc\StringConversion.s
+Comment: invalid used once
+loopd2s 0000001A
+
+Symbol: loopd2s
+   Definitions
+      At line 42 in file ..\inc\StringConversion.s
+   Uses
+      At line 57 in file ..\inc\StringConversion.s
+Comment: loopd2s used once
+makeArray 00000040
+
+Symbol: makeArray
+   Definitions
+      At line 58 in file ..\inc\StringConversion.s
+   Uses
+      At line 45 in file ..\inc\StringConversion.s
+      At line 70 in file ..\inc\StringConversion.s
+
+nullTerminate 0000006E
+
+Symbol: nullTerminate
+   Definitions
+      At line 78 in file ..\inc\StringConversion.s
+   Uses
+      At line 61 in file ..\inc\StringConversion.s
+Comment: nullTerminate used once
+zerod2s 0000005E
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: zerod2s
+   Definitions
+      At line 71 in file ..\inc\StringConversion.s
+   Uses
+      At line 40 in file ..\inc\StringConversion.s
+Comment: zerod2s used once
+8 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+GIf2s 00000000
+
+Symbol: GIf2s
+   Definitions
+      At line 103 in file ..\inc\StringConversion.s
+   Uses
+      At line 114 in file ..\inc\StringConversion.s
+      At line 141 in file ..\inc\StringConversion.s
+      At line 143 in file ..\inc\StringConversion.s
+      At line 154 in file ..\inc\StringConversion.s
+      At line 157 in file ..\inc\StringConversion.s
+      At line 159 in file ..\inc\StringConversion.s
+      At line 170 in file ..\inc\StringConversion.s
+      At line 173 in file ..\inc\StringConversion.s
+      At line 175 in file ..\inc\StringConversion.s
+
+GPd2s 00000004
+
+Symbol: GPd2s
+   Definitions
+      At line 26 in file ..\inc\StringConversion.s
+   Uses
+      At line 34 in file ..\inc\StringConversion.s
+      At line 63 in file ..\inc\StringConversion.s
+      At line 66 in file ..\inc\StringConversion.s
+      At line 74 in file ..\inc\StringConversion.s
+      At line 77 in file ..\inc\StringConversion.s
+      At line 81 in file ..\inc\StringConversion.s
+
+GPf2s 00000004
+
+Symbol: GPf2s
+   Definitions
+      At line 104 in file ..\inc\StringConversion.s
+   Uses
+      At line 115 in file ..\inc\StringConversion.s
+      At line 127 in file ..\inc\StringConversion.s
+      At line 130 in file ..\inc\StringConversion.s
+      At line 136 in file ..\inc\StringConversion.s
+      At line 149 in file ..\inc\StringConversion.s
+      At line 152 in file ..\inc\StringConversion.s
+      At line 165 in file ..\inc\StringConversion.s
+      At line 168 in file ..\inc\StringConversion.s
+      At line 178 in file ..\inc\StringConversion.s
+      At line 181 in file ..\inc\StringConversion.s
+      At line 186 in file ..\inc\StringConversion.s
+      At line 196 in file ..\inc\StringConversion.s
+      At line 199 in file ..\inc\StringConversion.s
+      At line 203 in file ..\inc\StringConversion.s
+      At line 206 in file ..\inc\StringConversion.s
+      At line 210 in file ..\inc\StringConversion.s
+      At line 213 in file ..\inc\StringConversion.s
+      At line 217 in file ..\inc\StringConversion.s
+      At line 220 in file ..\inc\StringConversion.s
+      At line 224 in file ..\inc\StringConversion.s
+      At line 227 in file ..\inc\StringConversion.s
+
+char 00000014
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+Symbol: char
+   Definitions
+      At line 108 in file ..\inc\StringConversion.s
+   Uses
+      At line 126 in file ..\inc\StringConversion.s
+      At line 133 in file ..\inc\StringConversion.s
+      At line 146 in file ..\inc\StringConversion.s
+      At line 148 in file ..\inc\StringConversion.s
+      At line 162 in file ..\inc\StringConversion.s
+      At line 164 in file ..\inc\StringConversion.s
+      At line 195 in file ..\inc\StringConversion.s
+      At line 202 in file ..\inc\StringConversion.s
+      At line 209 in file ..\inc\StringConversion.s
+      At line 216 in file ..\inc\StringConversion.s
+      At line 223 in file ..\inc\StringConversion.s
+      At line 230 in file ..\inc\StringConversion.s
+
+chard2s 0000000C
+
+Symbol: chard2s
+   Definitions
+      At line 28 in file ..\inc\StringConversion.s
+   Uses
+      At line 52 in file ..\inc\StringConversion.s
+      At line 73 in file ..\inc\StringConversion.s
+      At line 80 in file ..\inc\StringConversion.s
+
+digitCount 00000008
+
+Symbol: digitCount
+   Definitions
+      At line 27 in file ..\inc\StringConversion.s
+   Uses
+      At line 36 in file ..\inc\StringConversion.s
+      At line 54 in file ..\inc\StringConversion.s
+      At line 56 in file ..\inc\StringConversion.s
+      At line 59 in file ..\inc\StringConversion.s
+      At line 67 in file ..\inc\StringConversion.s
+      At line 69 in file ..\inc\StringConversion.s
+
+hundred 0000000C
+
+Symbol: hundred
+   Definitions
+      At line 106 in file ..\inc\StringConversion.s
+   Uses
+      At line 117 in file ..\inc\StringConversion.s
+Comment: hundred used once
+n 00000000
+
+Symbol: n
+   Definitions
+      At line 25 in file ..\inc\StringConversion.s
+   Uses
+      At line 33 in file ..\inc\StringConversion.s
+      At line 38 in file ..\inc\StringConversion.s
+      At line 43 in file ..\inc\StringConversion.s
+      At line 50 in file ..\inc\StringConversion.s
+
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Absolute symbols
+
+ten 00000008
+
+Symbol: ten
+   Definitions
+      At line 105 in file ..\inc\StringConversion.s
+   Uses
+      At line 116 in file ..\inc\StringConversion.s
+Comment: ten used once
+thousand 00000010
+
+Symbol: thousand
+   Definitions
+      At line 107 in file ..\inc\StringConversion.s
+   Uses
+      At line 119 in file ..\inc\StringConversion.s
+      At line 138 in file ..\inc\StringConversion.s
+
+10 symbols
+351 symbols in table
